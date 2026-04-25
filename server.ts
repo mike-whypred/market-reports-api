@@ -1,6 +1,7 @@
 import express from "express";
 import { fetchTickers, type TickerInput } from "./lib/data/fetch-tickers.js";
 import { transformData } from "./lib/data/transforms.js";
+import { SPREAD_LOOKUP } from "./lib/data/spreads.js";
 import { generateTableData } from "./lib/report/generator.js";
 import { generateReportHTML, deriveTheme } from "./lib/report/template.js";
 import { getAssetIcon } from "./lib/report/assets.js";
@@ -11,6 +12,7 @@ app.use(express.json());
 
 interface RequestBody {
   tickers: TickerInput[];
+  spreads?: string[];
   color?: string;
   endDate?: string;
   reportName?: string;
@@ -22,7 +24,7 @@ app.get("/health", (_req, res) => {
 
 app.post("/api/report", async (req, res) => {
   const body = req.body as RequestBody;
-  const { tickers, color, endDate, reportName } = body;
+  const { tickers, spreads, color, endDate, reportName } = body;
 
   if (!tickers || !Array.isArray(tickers) || tickers.length === 0) {
     res.status(400).json({
@@ -37,6 +39,33 @@ app.post("/api/report", async (req, res) => {
         error: `Each ticker must have "ticker" and "name" fields. Got: ${JSON.stringify(t)}`,
       });
       return;
+    }
+  }
+
+  if (spreads !== undefined && !Array.isArray(spreads)) {
+    res.status(400).json({ error: "spreads must be an array of spread names" });
+    return;
+  }
+
+  const tickerNames = new Set(tickers.map((t) => t.name));
+  const validatedSpreads: string[] = [];
+  if (spreads) {
+    for (const name of spreads) {
+      const def = SPREAD_LOOKUP.get(name);
+      if (!def) {
+        res.status(400).json({
+          error: `Unknown spread "${name}". Valid: ${Array.from(SPREAD_LOOKUP.keys()).join(", ")}`,
+        });
+        return;
+      }
+      const missing = [def.leg1, def.leg2].filter((leg) => !tickerNames.has(leg));
+      if (missing.length > 0) {
+        res.status(400).json({
+          error: `Spread "${name}" requires legs ${missing.join(", ")} — include tickers with these exact "name" values`,
+        });
+        return;
+      }
+      validatedSpreads.push(name);
     }
   }
 
@@ -82,6 +111,19 @@ app.post("/api/report", async (req, res) => {
     }));
 
     const assetList = tickers.map((t) => t.name);
+
+    for (const name of validatedSpreads) {
+      const def = SPREAD_LOOKUP.get(name)!;
+      mapping.push({
+        asset: name,
+        asset_name: def.displayName,
+        symbol: name,
+        index: mapping.length,
+        asset_class: def.assetClass,
+      });
+      assetList.push(name);
+    }
+
     const { tableData, reportDate } = generateTableData(transformed, mapping, assetList);
 
     for (const row of tableData) {

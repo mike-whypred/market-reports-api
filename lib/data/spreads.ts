@@ -1,25 +1,29 @@
 import type { DataPoint } from "../types";
 
-interface SpreadDef {
+export interface SpreadDef {
   name: string;
   leg1: string;
   leg2: string;
   type: "return" | "absolute";
+  displayName: string;
+  assetClass: string;
 }
 
-const SPREAD_DEFS: SpreadDef[] = [
-  { name: "SP5NDQ", leg1: "S&P500", leg2: "NASDAQ", type: "return" },
-  { name: "SP5R2000", leg1: "S&P500", leg2: "RUSSELL", type: "return" },
-  { name: "VALGROW", leg1: "VALUE", leg2: "GROWTH", type: "return" },
-  { name: "VALMOM", leg1: "VALUE", leg2: "MOMENTUM", type: "return" },
-  { name: "VALQUAL", leg1: "VALUE", leg2: "QUALITY", type: "return" },
-  { name: "DMEM", leg1: "DM", leg2: "EM", type: "return" },
-  { name: "DMBONDS", leg1: "DM", leg2: "BONDS", type: "return" },
-  { name: "AUAG", leg1: "GOLD", leg2: "SILVER", type: "return" },
-  { name: "OILWOILB", leg1: "WTI", leg2: "BRENT", type: "return" },
-  { name: "UST2UST10", leg1: "UST10Y", leg2: "UST2Y", type: "absolute" },
-  { name: "USREAL10", leg1: "UST10Y", leg2: "USBEI10Y", type: "absolute" },
+export const SPREAD_DEFS: SpreadDef[] = [
+  { name: "SP5NDQ", leg1: "S&P500", leg2: "NASDAQ", type: "return", displayName: "S&P 500 vs Nasdaq", assetClass: "Spreads" },
+  { name: "SP5R2000", leg1: "S&P500", leg2: "RUSSELL", type: "return", displayName: "S&P 500 vs Russell 2000", assetClass: "Spreads" },
+  { name: "VALGROW", leg1: "VALUE", leg2: "GROWTH", type: "return", displayName: "Value vs Growth", assetClass: "Spreads" },
+  { name: "VALMOM", leg1: "VALUE", leg2: "MOMENTUM", type: "return", displayName: "Value vs Momentum", assetClass: "Spreads" },
+  { name: "VALQUAL", leg1: "VALUE", leg2: "QUALITY", type: "return", displayName: "Value vs Quality", assetClass: "Spreads" },
+  { name: "DMEM", leg1: "DM", leg2: "EM", type: "return", displayName: "DM vs EM Equity", assetClass: "Spreads" },
+  { name: "DMBONDS", leg1: "DM", leg2: "BONDS", type: "return", displayName: "DM Equity vs Bonds", assetClass: "Spreads" },
+  { name: "AUAG", leg1: "GOLD", leg2: "SILVER", type: "return", displayName: "Gold vs Silver", assetClass: "Spreads" },
+  { name: "OILWOILB", leg1: "WTI", leg2: "BRENT", type: "return", displayName: "WTI vs Brent", assetClass: "Spreads" },
+  { name: "UST2UST10", leg1: "UST10Y", leg2: "UST2Y", type: "absolute", displayName: "2s10s Yield Curve", assetClass: "Spreads" },
+  { name: "USREAL10", leg1: "UST10Y", leg2: "USBEI10Y", type: "absolute", displayName: "10Y Real Yield", assetClass: "Spreads" },
 ];
+
+export const SPREAD_LOOKUP: Map<string, SpreadDef> = new Map(SPREAD_DEFS.map((s) => [s.name, s]));
 
 export function calculateSpreads(
   wideData: Map<string, Map<string, number>>,

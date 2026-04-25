@@ -65,6 +65,7 @@ Generates an HTML market report for the specified tickers.
     { "ticker": "EURUSD", "name": "EUR/USD" },
     { "ticker": "BTCUSD", "name": "Bitcoin" }
   ],
+  "spreads": ["UST2UST10"],
   "color": "#1e293b",
   "endDate": "2026-04-17",
   "reportName": "My Portfolio Report"
@@ -76,6 +77,7 @@ Generates an HTML market report for the specified tickers.
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `tickers` | `Array<{ticker, name}>` | Yes | — | List of tickers to include. Each needs `ticker` (symbol) and `name` (display name). Order is preserved. |
+| `spreads` | `string[]` | No | `[]` | Synthetic differential rows to append after the ticker rows. See [Spreads](#spreads) below. |
 | `color` | `string` | No | `#1e293b` (dark slate) | 6-digit hex color for the report header banner. A full theme is derived: gradient, text contrast, hover tint. |
 | `endDate` | `string` | No | Latest available | Filter data up to this date. Format: `YYYY-MM-DD`. |
 | `reportName` | `string` | No | `"Market Report"` | Title in the report header and HTML `<title>`. |
@@ -90,6 +92,45 @@ Each ticker is automatically routed to the correct data source:
 | **FRED** | Known series: `DGS*`, `T*YIE`, `BAML*`, `FEDFUNDS`, `SOFR` | `DGS10`, `T5YIE`, `BAMLC0A4CBBB` |
 | **Alpha Vantage** | 6 uppercase chars, both halves are ISO currency codes | `EURUSD`, `GBPUSD`, `AUDUSD` |
 | **FMP** | Uppercase ending in `USD`, base is not a currency code | `BTCUSD`, `ETHUSD`, `SOLUSD` |
+
+#### Spreads
+
+Spreads are computed differentials between two assets that the API derives from tickers you've already included. To request a spread, both legs must appear in `tickers` with their `name` set to the **exact** leg label below — that's how the API joins your tickers to the spread definition.
+
+| Spread | Type | Leg names (must appear in `tickers[].name`) | Display |
+|---|---|---|---|
+| `SP5NDQ` | return | `S&P500`, `NASDAQ` | S&P 500 vs Nasdaq |
+| `SP5R2000` | return | `S&P500`, `RUSSELL` | S&P 500 vs Russell 2000 |
+| `VALGROW` | return | `VALUE`, `GROWTH` | Value vs Growth |
+| `VALMOM` | return | `VALUE`, `MOMENTUM` | Value vs Momentum |
+| `VALQUAL` | return | `VALUE`, `QUALITY` | Value vs Quality |
+| `DMEM` | return | `DM`, `EM` | DM vs EM Equity |
+| `DMBONDS` | return | `DM`, `BONDS` | DM Equity vs Bonds |
+| `AUAG` | return | `GOLD`, `SILVER` | Gold vs Silver |
+| `OILWOILB` | return | `WTI`, `BRENT` | WTI vs Brent |
+| `UST2UST10` | absolute | `UST10Y`, `UST2Y` | 2s10s Yield Curve |
+| `USREAL10` | absolute | `UST10Y`, `USBEI10Y` | 10Y Real Yield |
+
+**Type semantics:**
+- **`return`** — cumulative sum of daily return differences `(ret_leg1 − ret_leg2)`. The displayed deltas (1W/1M/3M) are the absolute change in the cumulative series over that window — i.e., relative outperformance of leg1 vs leg2.
+- **`absolute`** — raw level difference `leg1 − leg2` per date. Used for yield curves where legs are already in percentage points. Deltas display as percentage-point changes.
+
+If a spread name is unknown, or its required legs aren't both in `tickers`, the request returns **400** with a message naming what's missing.
+
+##### Example: 2s10s curve report
+
+```json
+{
+  "tickers": [
+    { "ticker": "DGS10", "name": "UST10Y" },
+    { "ticker": "DGS2",  "name": "UST2Y" }
+  ],
+  "spreads": ["UST2UST10"],
+  "reportName": "Treasury Curve"
+}
+```
+
+The report renders three rows: `UST10Y`, `UST2Y`, then the `2s10s Yield Curve` spread row.
 
 #### Response
 
