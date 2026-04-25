@@ -11,15 +11,25 @@ npm run dev    # starts on port 3000 (or PORT env var)
 
 ## Deploy to Render
 
-1. Create a new **Web Service** on Render
-2. Connect this repo, set **Root Directory** to `api`
-3. Configure:
+### Option A — Blueprint (recommended)
+
+This repo ships a `render.yaml`. On Render:
+
+1. **New** → **Blueprint**
+2. Connect this repo. Render reads `render.yaml` and provisions the service.
+3. Fill in the three API keys when prompted (they're declared `sync: false` so Render won't pull them from a group).
+
+### Option B — Manual Web Service
+
+1. **New** → **Web Service**, connect this repo
+2. Configure:
+   - **Runtime:** Node
    - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
-   - **Environment:** Node
-4. Add environment variables (see below)
+   - **Health Check Path:** `/health`
+3. Add environment variables (see below)
 
-Render will auto-assign a port via the `PORT` env var.
+Render auto-assigns a port via the `PORT` env var — `server.ts` already reads it.
 
 ## Environment Variables
 
